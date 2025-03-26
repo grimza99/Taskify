@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { getColumns } from "@/api/column.api";
 import { getCards } from "@/api/card.api";
 import { getDashboardInfo } from "@/api/dashboard";
+import { DetailContent } from "@/components/common/ModalPopup";
+import CardModal from "@/components/ModalContents/Card.modal";
 
 interface ColumnData {
   id: number;
@@ -35,12 +37,12 @@ export default function Dashboard() {
       const columnsWithCards: ColumnWithCards[] = await Promise.all(
         columnList.map(async (col): Promise<ColumnWithCards> => {
           const cards = await getCards(col.id);
-          console.log(`Column ${col.id} 카드 수:`, cards.length);
+          // console.log(`Column ${col.id} 카드 수:`, cards.length);
           return { ...col, cards };
         })
       );
 
-      console.log("최종 columns with cards:", columnsWithCards);
+      // console.log("최종 columns with cards:", columnsWithCards);
       setColumns(columnsWithCards);
     } catch (err) {
       console.error("컬럼 또는 카드 로딩 실패", err);
@@ -59,13 +61,13 @@ export default function Dashboard() {
     <div>
       <Header />
       <>
+        <DetailContent ModalOpenButton="테스트 ">
+          <CardModal cardId={11808} columnTitle="To do" columnId={46358} />
+        </DetailContent>
         {isLoading ? (
           <p>로딩 중...</p>
         ) : (
           columns.map((column) => {
-            console.log(
-              `Rendering Column "${column.title}" with ${column.cards?.length ?? 0} cards`
-            );
             return (
               <Column
                 key={column.id}

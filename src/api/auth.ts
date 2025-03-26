@@ -1,6 +1,5 @@
 import { instance } from "./instance";
 import useAuthStore from "@/utils/Zustand/zustand";
-import { removeItem } from "@/utils/localstorage";
 //
 
 export async function loginApi(email: string, password: string) {
@@ -21,7 +20,6 @@ export async function loginApi(email: string, password: string) {
       });
       return res.data;
     }
-    throw new Error("Unexpected status code: " + res.status);
   } catch (error: any) {
     if (error.response) {
       throw error;
@@ -31,7 +29,6 @@ export async function loginApi(email: string, password: string) {
 }
 
 export async function signupApi(
-  teamId: string,
   email: string,
   nickname: string,
   password: string
@@ -42,20 +39,7 @@ export async function signupApi(
       nickname,
       password,
     });
-
-    if (res.status === 200 || res.status === 201) {
-      useAuthStore.setState({
-        isLoggedIn: false,
-        userId: null,
-        userNickname: "",
-        profileImageUrl: null,
-        dashboardId: null,
-        dashboardTitle: "",
-      });
-      removeItem("accessToken");
-      return res.data;
-    }
-    throw new Error("Unexpected status code: " + res.status);
+    return res.data;
   } catch (error: any) {
     if (error.response) {
       throw error;

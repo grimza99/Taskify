@@ -1,7 +1,6 @@
 import Header from "@/components/common/Header";
 import EditMember from "@/components/EditMember";
 import InvitationHistory from "@/components/InvitationHistory";
-import { getMember } from "@/api/member";
 import { useEffect, useState } from "react";
 import { DashButton } from "@/components/common/Button";
 import { deleteDashboard, getDashboardInfo } from "@/api/dashboard";
@@ -10,13 +9,11 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import EditDashboard from "@/components/EditDashboard";
 import Link from "next/link";
+import SideMenu from "@/components/common/SideMenu";
 //
 export default function EditPage() {
   const router = useRouter();
   const { dashboardId } = router.query;
-  const [members, setMembers] = useState([]);
-
-  const [currentPage, setCurrentPage] = useState(1);
   const [dashboardInfo, setDashboardInfo] = useState({
     title: "",
     color: "",
@@ -26,15 +23,9 @@ export default function EditPage() {
   useEffect(() => {
     if (dashboardId) {
       handleLoad();
-      handleLoadMembers();
     }
-  }, [dashboardId, currentPage]);
+  }, [dashboardId]);
   //
-
-  const handleLoadMembers = async () => {
-    const { members } = await getMember(currentPage, dashboardId as string);
-    setMembers(members);
-  };
   const handleLoad = async () => {
     const dashboard = await getDashboardInfo(dashboardId as string);
 
@@ -52,7 +43,8 @@ export default function EditPage() {
 
   return (
     <div className="ml-[67px] tablet:ml-[160px] laptop:ml-[300px]">
-      <Header createdByMe={dashboardInfo.createdByMe} members={members} />
+      <SideMenu />
+      <Header createdByMe={dashboardInfo.createdByMe} />
       <div className="px-3  min-w-[284px] tablet:max-w-[584px] laptop:w-[620px] py-4 tablet:px-5 tablet:py-5 ">
         <div className="flex flex-col gap-[10px] tablet:gap-[19px] laptop:gap-[34px]">
           <Link href={`/dashboard/${dashboardId}`}>
@@ -65,7 +57,6 @@ export default function EditPage() {
             <div className="flex flex-col gap-4">
               <EditDashboard
                 title={dashboardInfo.title}
-                color={dashboardInfo.color}
                 dashboardId={router.query.dashboardId as string}
               ></EditDashboard>
               <EditMember dashboardId={dashboardId as string} />

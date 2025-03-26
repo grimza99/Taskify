@@ -8,22 +8,49 @@ import { Badges } from "./Badge";
 import Link from "next/link";
 import useAuthStore from "@/utils/Zustand/zustand";
 import { useStore } from "@/utils/Zustand/useStore";
+import { useEffect, useState } from "react";
+import { getMember } from "@/api/member";
+import { Modal } from "./ModalPopup";
+import InputModal from "../ModalContents/InputModal";
+import { createInvite } from "@/api/dashboard";
+import Logout from "./Dropdown/LogoutDropdown";
 
-/**ToDo
- * 초대하기 버튼 클릭시 모달 팝업 함수
- */
 interface Props {
-  members?: Member[];
   createdByMe?: boolean;
 }
 
-export default function Header({ members, createdByMe }: Props) {
+export default function Header({ createdByMe }: Props) {
   const store = useStore(useAuthStore, (state) => state);
+  const dashboardId = store?.dashboardId;
   const router = useRouter();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [inviteValue, setInviteValue] = useState("");
   const display = router.pathname === "/mydashbord" ? "none" : "block";
-  let dashboardTitle = store ? store.dashboardTitle : "내 대시보드";
-  dashboardTitle = router.pathname === "/mypage" ? "계정관리" : dashboardTitle;
+  const dashboardTitle =
+    router.pathname === "/mypage"
+      ? "계정관리"
+      : router.pathname === "/mydashboard"
+        ? `${store?.userNickname}님의 대시보드`
+        : store?.dashboardTitle;
 
+  useEffect(() => {
+    handleLoadDashboardInfo();
+  }, [dashboardId, router.pathname]);
+
+  const handleLoadDashboardInfo = async () => {
+    if (!dashboardId) return;
+    if (router.pathname !== "/mydashboard") {
+      const { members } = await getMember(1, Number(dashboardId), 4);
+      setMembers(members);
+    }
+  };
+
+  const inviteMember = async () => {
+    if (!dashboardId) return;
+    await createInvite(inviteValue, dashboardId as string);
+  };
+
+  //
   return (
     <div className="flex bg-white flex-row justify-between w-full h-[70px] desktop:pr-20 py-[15px] px-[20px] laptop:pl-10 laptop:pr-[10px]  border-b-[1px]  items-center border-gray-300 ">
       <div className="flex flex-row items-center gap-2">
@@ -52,21 +79,36 @@ export default function Header({ members, createdByMe }: Props) {
               </div>
             </button>
           </Link>
-          <button
-            onClick={() => {}}
-            className="w-[73px] tablet:w-[116px] justify-center items-center h-[40px] flex flex-row  py-[7px] px-3 tablet:px-4 gap-2 rounded-lg border-[1px] border-gray-300"
-          >
-            <Image
-              className="hidden tablet:block"
-              src={Invite}
-              width={15}
-              height={15}
-              alt="+"
-            />
-            <div className="text-gray-500 text-xs-medium tablet:text-md-medium">
-              초대하기
+          {router.pathname !== "/mydashboard" && (
+            <div className="w-[73px] h-[40px] tablet:w-[116px]">
+              <Modal
+                ModalOpenButton={
+                  <div className=" justify-center items-center  flex flex-row  py-[7px] px-3 tablet:px-4 gap-2 ">
+                    <Image
+                      className="hidden tablet:block"
+                      src={Invite}
+                      width={15}
+                      height={15}
+                      alt="+"
+                    />
+                    <div className="text-gray-500 text-xs-medium tablet:text-md-medium">
+                      초대하기
+                    </div>
+                  </div>
+                }
+                variant="outline"
+                rightHandlerText="초대"
+                rightOnClick={inviteMember}
+              >
+                <InputModal
+                  label="이메일"
+                  title="초대하기"
+                  placeholder="이메일을 입력해주세요."
+                  changeValue={(value) => setInviteValue(value)}
+                />
+              </Modal>
             </div>
-          </button>
+          )}
         </div>
         <div className="flex w-fit flex-row gap-4 tablet:gap-6 laptop:gap-[38px]">
           <div
@@ -77,11 +119,13 @@ export default function Header({ members, createdByMe }: Props) {
           </div>
           <div className="h-[38px] w-[1px] bg-gray-300" />
           {store && (
-            <Profile
-              nickname={store.userNickname}
-              profileImageUrl={store.profileImageUrl}
-              type="profile"
-            />
+            <Logout>
+              <Profile
+                nickname={store.userNickname}
+                profileImageUrl={store.profileImageUrl}
+                type="profile"
+              />
+            </Logout>
           )}
         </div>
       </div>
