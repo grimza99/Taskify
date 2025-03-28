@@ -1,17 +1,16 @@
 import { createDashboard, getDashboards } from "@/api/dashboard";
 import Header from "@/components/common/Header";
-import { Modal } from "@/components/common/ModalPopup";
+import { DetailContent, Modal } from "@/components/common/ModalPopup";
 import NewDashboard from "@/components/ModalContents/NewDashboard";
 import { useEffect, useState } from "react";
-import {
-  DashButton,
-  PaginationButton,
-  PlusIconButton,
-} from "@/components/common/Button";
+import * as B from "@/components/common/Button";
 import InvitedDashboards from "@/components/InvitedDashboards/InvitedDashboards";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import SideMenu from "@/components/common/SideMenu";
+import CardModal from "@/components/ModalContents/Card.modal";
+import { useStore } from "zustand";
+import useAuthStore from "@/utils/Zustand/zustand";
 
 export interface Data {
   title: string;
@@ -56,6 +55,13 @@ export default function MyDashboard() {
       <SideMenu />
       <Header />
       <div className="flex flex-col py-6 px-6 tablet:py-10 tablet:px-10 gap-6 tablet:gap-12 laptop:gap-10 max-w-[1022px]">
+        <DetailContent
+          cardId={10808}
+          cardTitle="부산으로 야반도주"
+          ModalOpenButton="테스트"
+        >
+          <CardModal cardId={11808} columnId={46358} columnTitle="To Do" />
+        </DetailContent>
         <div className="flex flex-col gap-4 laptop:gap-3">
           <div className="w-full grid gap-[10px] grid-cols-1 tablet:grid-cols-2  laptop:grid-cols-3">
             <div className="w-full h-full">
@@ -65,7 +71,7 @@ export default function MyDashboard() {
                     <p className="text-lg-semibold tablet:text-lg-semibold">
                       새로운 대시보드 만들기
                     </p>
-                    <PlusIconButton />
+                    <B.PlusIconButton />
                   </div>
                 }
                 rightHandlerText="생성"
@@ -78,7 +84,7 @@ export default function MyDashboard() {
             {boardList.map((board) => {
               return (
                 <Link href={`/dashboard/${board.id}`}>
-                  <DashButton
+                  <B.DashButton
                     hasArrow
                     title={board.title}
                     color={board.color}
@@ -91,7 +97,7 @@ export default function MyDashboard() {
             <p>
               {totalPage} 중 {currentPage}
             </p>
-            <PaginationButton
+            <B.PaginationButton
               hasPrev={currentPage > 1}
               hasNext={totalPage > currentPage}
               onPrev={PrevPage}
