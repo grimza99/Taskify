@@ -4,19 +4,25 @@ import ReactCrop, { Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { ClipLoader } from "react-spinners";
 import { instance } from "@/api/instance";
-import UnifiedInput from "@/components/common/Input";
+import UnifiedInput from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import ProfileImg from "@/assets/icons/CardProfile.svg";
+import { AlertModal } from "@/components/ModalContents/AlertModal";
+import useAuthStore from "@/utils/Zustand/zustand";
 
 const EditProfile = () => {
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
-  const [profileImage, setProfileImage] = useState<string>(ProfileImg);
+  // profileImage 타입을 string | null 로 관리 (기본값: ProfileImg)
+  const [profileImage, setProfileImage] = useState<string | null>(ProfileImg);
   const [errorMsg, setErrorMsg] = useState("");
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cropping, setCropping] = useState(false);
   const [upImg, setUpImg] = useState<string | null>(null);
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  // 프로필 이미지 제거 상태 플래그
+  const [removedImage, setRemovedImage] = useState(false);
 
   const [crop, setCrop] = useState<Crop>({
     unit: "%",
@@ -39,6 +45,7 @@ const EditProfile = () => {
         setEmail(userData.email);
         setNickname(userData.nickname);
         setProfileImage(userData.profileImageUrl || ProfileImg);
+        setRemovedImage(false);
       } catch (error) {
         console.error("User data fetch error:", error);
       }
@@ -62,10 +69,10 @@ const EditProfile = () => {
       setErrorMsg("");
       setIsLoading(true);
       const imageUrl = URL.createObjectURL(file);
-      // 크롭 모드 활성화 및 원본 이미지 URL 저장
       setUpImg(imageUrl);
       setCropping(true);
       setNewImageFile(file);
+      setRemovedImage(false);
       setIsLoading(false);
     }
   };
@@ -131,9 +138,8 @@ const EditProfile = () => {
           reject(new Error("Canvas is empty"));
           return;
         }
-        // Blob을 File로 변환하여 name 속성이 포함된 File 객체 생성
         const file = new File([blob], fileName, { type: blob.type });
-        window.URL.revokeObjectURL(profileImage);
+        if (profileImage) window.URL.revokeObjectURL(profileImage);
         const newCroppedImageUrl = window.URL.createObjectURL(file);
         resolve(newCroppedImageUrl);
       }, "image/jpeg");
@@ -144,7 +150,24 @@ const EditProfile = () => {
     fileInputRef.current?.click();
   };
 
+  const handleCancelCrop = () => {
+    setCropping(false);
+    setUpImg(null);
+    setNewImageFile(null);
+  };
+
+  // 프로필 사진 제거 함수
+  const handleRemoveProfileImage = () => {
+    setProfileImage(null);
+    setNewImageFile(null);
+    setRemovedImage(true);
+  };
+
   const handleSave = async () => {
+    if (nickname.trim() === "") {
+      setErrorMsg("닉네임을 입력해주세요.");
+      return;
+    }
     try {
       let uploadedImageUrl: string | null = null;
       if (newImageFile) {
@@ -155,14 +178,21 @@ const EditProfile = () => {
         });
         uploadedImageUrl = imageResponse.data.profileImageUrl;
       }
-
+      // 기본 이미지인 경우, profileImage가 기본 이미지와 동일하면 null을 전송
+      const currentProfileImage =
+        profileImage === ProfileImg ? null : profileImage;
       const updateBody = {
         nickname,
-        profileImageUrl: uploadedImageUrl || profileImage,
+        profileImageUrl:
+          uploadedImageUrl !== null ? uploadedImageUrl : currentProfileImage,
       };
 
-      const updateResponse = await instance.put("/users/me", updateBody, {});
-      console.log("Profile updated:", updateResponse.data);
+      const updateResponse = await instance.put("/users/me", updateBody);
+      useAuthStore.setState({
+        userNickname: updateResponse.data.nickname,
+        profileImageUrl: updateResponse.data.profileImageUrl,
+      });
+      setAlertModalOpen(true);
     } catch (error) {
       console.error("Profile update error:", error);
       setErrorMsg("프로필 업데이트에 실패했습니다.");
@@ -187,13 +217,26 @@ const EditProfile = () => {
                 </div>
               )}
               {!cropping && (
-                <Image
-                  src={profileImage}
-                  alt="Profile"
-                  fill
-                  onLoadingComplete={() => setIsLoading(false)}
-                  style={{ objectFit: "cover" }}
-                />
+                <>
+                  <Image
+                    src={profileImage || ProfileImg}
+                    alt="Profile"
+                    fill
+                    onLoadingComplete={() => setIsLoading(false)}
+                    style={{ objectFit: "cover" }}
+                  />
+                  {profileImage && profileImage !== ProfileImg && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveProfileImage();
+                      }}
+                      className="absolute flex items-center justify-center w-6 h-6 text-sm text-gray-700 bg-white rounded-full shadow cursor-pointer top-1 right-1"
+                    >
+                      ×
+                    </button>
+                  )}
+                </>
               )}
             </div>
             <input
@@ -203,9 +246,6 @@ const EditProfile = () => {
               onChange={handleImageChange}
               style={{ display: "none" }}
             />
-            {errorMsg && (
-              <p className="mt-2 text-sm text-red-500">{errorMsg}</p>
-            )}
           </div>
           <div className="flex-1 space-y-4">
             <UnifiedInput
@@ -222,10 +262,16 @@ const EditProfile = () => {
               label="닉네임"
               placeholder=""
               value={nickname}
-              onChange={(val) => setNickname(val)}
+              onChange={(val) => {
+                setNickname(val);
+                if (val.trim() !== "") setErrorMsg("");
+              }}
               disable={false}
-              hideAsterisk={true} // 별표 숨기기
+              hideAsterisk={true}
             />
+            {errorMsg && (
+              <p className="mt-2 text-sm text-[#d6173a]">{errorMsg}</p>
+            )}
             <div className="flex justify-end mt-6">
               <Button onClick={handleSave} variant="primary">
                 저장
@@ -245,10 +291,13 @@ const EditProfile = () => {
                   src={upImg}
                   alt="Crop me"
                   onLoad={onImageLoaded}
-                  style={{ maxHeight: "70vh", width: "auto" }}
+                  style={{ maxHeight: "35vh", width: "auto" }}
                 />
               </ReactCrop>
-              <div className="flex justify-end mt-4">
+              <div className="flex flex-col items-end gap-2 mt-4">
+                <Button onClick={handleCancelCrop} variant="secondary">
+                  취소
+                </Button>
                 <Button onClick={makeClientCrop} variant="primary">
                   완료
                 </Button>
@@ -257,6 +306,12 @@ const EditProfile = () => {
           </div>
         )}
       </div>
+
+      <AlertModal
+        isOpen={alertModalOpen}
+        message="프로필이 변경되었습니다"
+        onConfirm={() => setAlertModalOpen(false)}
+      />
     </>
   );
 };

@@ -6,8 +6,8 @@ declare global {
     email: string;
     nickname: string;
     profileImageUrl: string | null;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
     userId?: number;
     isOwner?: boolean;
   }
@@ -16,33 +16,43 @@ declare global {
     email: string;
     nickname: string;
     profileImageUrl: string | null;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
     userId: number;
     isOwner: boolean;
   }
-  interface Card {
+
+  interface MemberData {
+    totalCount: number;
+    members: Member[];
+  }
+  interface Assignee {
     id: number;
+    profileImageUrl: string | null;
+    nickname: string;
+    userId: number;
+  }
+  interface Card {
+    cardId: number;
     title: string;
     description: string;
     tags: string[];
-    dueDate: string | null;
-    assignee: {
-      profileImageUrl: string | null;
-      nickname: string;
-      id: number;
-    };
+    dueDate: string;
+    assignee: Assignee | null;
     imageUrl: string | null;
-    teamId: string;
     columnId: number;
-    createdAt: string;
-    updatedAt: string;
+    updatedAt?: string;
+    imageFile?: File | null;
+  }
+
+  interface ColumnData extends Column {
+    cards: Card[];
   }
   interface CardComment {
     id: number;
     content: string;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
     cardId: number;
     author: {
       profileImageUrl: string | null;
@@ -55,8 +65,8 @@ declare global {
     id: number;
     title: string;
     color: string;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdByMe: boolean;
     userId: number;
   }
@@ -83,7 +93,7 @@ declare global {
     title: string;
     teamId: string;
     dashboardId: number;
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
   }
 }

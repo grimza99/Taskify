@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import DatePicker from "react-datepicker";
 import Image from "next/image";
-import Button from "./Button/Button";
+import Button from "@/components/common/Button/Button";
 import EyeCloseIcon from "@/assets/icons/EyeVisibility_off.svg";
 import EyeOpenIcon from "@/assets/icons/EyeVisibility_on.svg";
 import CalendarIcon from "@/assets/icons/Calendar.svg";
@@ -16,6 +16,7 @@ import {
   defaultValidate,
   InputVariant,
 } from "@/hooks/useValidation";
+import clsx from "clsx";
 
 export interface BaseInputProps {
   id?: string;
@@ -142,6 +143,7 @@ const defaultMaxLengths: Record<InputVariant, number> = {
   comment: 300,
   date: 0,
   confirmPassword: 15,
+  column: 8,
 };
 
 const UnifiedInput: FC<UnifiedInputProps> = ({
@@ -199,9 +201,12 @@ const UnifiedInput: FC<UnifiedInputProps> = ({
       <div className={`mb-4 ${className}`}>
         <label
           htmlFor="date-input"
-          className="block mb-2 text-sm text-gray-700 text-lg-regular"
+          className="block mb-2 text-sm text-gray-700 text-md-medium tablet:text-2lg-medium"
         >
           {label}
+          <span className={selectedDate ? "text-violet-200" : "text-gray-700"}>
+            *
+          </span>
         </label>
         <DatePicker
           selected={selectedDate}
@@ -217,12 +222,14 @@ const UnifiedInput: FC<UnifiedInputProps> = ({
     <div className={`mb-4 ${className}`}>
       <label
         htmlFor={inputId}
-        className="block mb-2 text-sm text-gray-700 text-lg-regular"
+        className="flex items-center gap-[2px] mb-2 text-sm text-gray-700 text-md-medium tablet:text-2lg-medium"
       >
         {label}
         {variant === "title" && !hideAsterisk && (
           <span
-            className={value && !error ? "text-violet-700" : "text-gray-700"}
+            className={clsx(
+              value && !error ? "text-violet-200" : "text-gray-700"
+            )}
           >
             *
           </span>

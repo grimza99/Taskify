@@ -1,5 +1,5 @@
-import { ChangeEvent, useEffect, useState } from "react";
-import { BaseInput } from "../common/Input";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import UnifiedInput from "@/components/common/Input/Input";
 import { getColumns } from "@/api/column.api";
 
 interface InputProps {
@@ -7,54 +7,64 @@ interface InputProps {
   placeholder: string;
   title: string;
   isColumn?: boolean;
-  dashboardId?: string;
+  dashboardId?: number;
+  variant: "email" | "column";
   changeValue: (value: string) => void;
+  setError?: Dispatch<SetStateAction<boolean>>;
+  defaultValue?: string;
 }
 export default function InputModal({
   label,
   title,
   placeholder,
+  variant,
   changeValue,
+  setError,
   dashboardId,
   isColumn,
+  defaultValue,
 }: InputProps) {
-  const [currentValue, setCurrentValue] = useState("");
+  const [currentValue, setCurrentValue] = useState(
+    isColumn ? "새로운 컬럼" : defaultValue ? defaultValue : ""
+  );
   const [isError, setIsError] = useState(false);
   const [columnsData, setColumnsData] = useState<Column[]>([]);
 
   useEffect(() => {
     columnsDuplicated();
-  }, []);
+  }, [changeValue]);
 
   const columnsDuplicated = async () => {
     if (!isColumn && !dashboardId) return;
-    const columns = await getColumns(dashboardId as string);
+    const columns = await getColumns(Number(dashboardId));
     setColumnsData(columns);
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (isColumn && currentValue) {
+  const handleChange = (value: string) => {
+    if (setError && currentValue !== "") {
       const isDuplicate = columnsData.some(
-        (column: Column) => column.title.trim() === e.target.value.trim()
+        (column: Column) => column.title.trim() === value.trim()
       );
+      setError(isDuplicate);
       setIsError(isDuplicate);
     }
-    setCurrentValue(e.target.value);
-    changeValue(e.target.value);
+    setCurrentValue(value);
+    changeValue(value);
   };
   return (
     <div className="flex flex-col w-full gap-4 tablet:gap-6">
       <p className="text-xl-bold tablet:text-2xl-bold">{title}</p>
       <div className="flex flex-col gap-2">
-        <label>{label}</label>
         <div>
-          <BaseInput
+          <UnifiedInput
+            variant={variant}
+            label={label}
             placeholder={placeholder}
             value={currentValue}
             onChange={handleChange}
-            type="text"
             className={isError ? "border-red" : "border-gray-300"}
           />
+
           {isError && (
             <p className="text-md-regular text-red">중복된 컬럼 이름입니다.</p>
           )}

@@ -1,33 +1,44 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import PlusIcon from "@/assets/icons/Plus.icon.svg";
+import { uploadCardImage } from "@/api/column.api";
+const DEFAULT_IMG = process.env.NEXT_PUBLIC_DEFAULT_IMG;
 
+interface Props {
+  imageUrl: string;
+  columnId: number;
+  onChangeImage: (value: string) => void;
+}
 export default function ImageUploadBox({
-  imageFile,
+  imageUrl,
   onChangeImage,
-}: {
-  imageFile: File | null;
-  onChangeImage: (file: File) => void;
-}) {
+  columnId,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-
+  const formattedImg = imageUrl === DEFAULT_IMG ? "" : imageUrl;
+  const [previewUrl, setPreviewUrl] = useState(imageUrl);
   useEffect(() => {
-    if (imageFile) {
-      const objectUrl = URL.createObjectURL(imageFile);
-      setPreviewUrl(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
-    }
-  }, [imageFile]);
-
+    onChangeImage(previewUrl);
+  }, [previewUrl]);
   const handleClick = () => {
-    fileInputRef.current?.click();
+    if (!previewUrl) {
+      fileInputRef.current?.click();
+    } else {
+      setPreviewUrl("");
+      onChangeImage("");
+    }
+  };
+
+  const handleChangeImageFile = async (imageFile: File) => {
+    const imageUrl = await uploadCardImage({ columnId, imageFile });
+    onChangeImage(imageUrl);
+    setPreviewUrl(imageUrl);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      onChangeImage(file);
+      handleChangeImageFile(file);
     }
   };
 
@@ -49,13 +60,12 @@ export default function ImageUploadBox({
         className="w-[76px] h-[76px] bg-gray-200 rounded-[8px] flex items-center justify-center cursor-pointer"
         onClick={handleClick}
       >
-        {previewUrl ? (
+        {formattedImg !== "" ? (
           <div className="w-[76px] h-[76px] relative overflow-hidden">
-            <Image
+            <img
               src={previewUrl}
               alt="미리보기 이미지"
-              fill
-              className="object-cover rounded-[6px]"
+              className="object-cover w-full h-full rounded-[6px]"
             />
           </div>
         ) : (

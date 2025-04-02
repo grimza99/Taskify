@@ -1,16 +1,11 @@
 import { instance } from "./instance";
 
-export async function getColumns(dashboardId: string): Promise<Column[]> {
-  try {
-    const res = await instance.get(`/columns`, {
-      params: { dashboardId },
-    });
-    // console.log("컬럼 응답 확인:", res.data);
-    return res.data.data;
-  } catch (error) {
-    console.error("getColumns error:", error);
-    throw new Error("컬럼 목록 조회 실패");
-  }
+export async function getColumns(dashboardId: number): Promise<Column[]> {
+  const res = await instance.get(`/columns`, {
+    params: { dashboardId },
+  });
+  // console.log("컬럼 응답 확인:", res.data);
+  return res.data.data;
 }
 
 export async function createColumn({
@@ -29,6 +24,16 @@ export async function createColumn({
   } catch (err) {
     throw new Error("컬럼 생성 실패");
   }
+}
+
+export async function updateColumn(columnId: number, title: string) {
+  const res = await instance.put(`/columns/${columnId}`, { title });
+  return res.data;
+}
+
+export async function deleteColumn(columnId: number) {
+  const res = await instance.delete(`/columns/${columnId}`);
+  return res.data;
 }
 
 export async function uploadCardImage({

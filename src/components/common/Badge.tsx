@@ -1,7 +1,7 @@
 import useWindowSize from "@/hooks/useWindow";
 import clsx from "clsx";
 interface BadgesProps {
-  memberList: Member[];
+  member: MemberData;
 }
 
 const RANDOM_COLOR = [
@@ -15,20 +15,18 @@ const RANDOM_COLOR = [
   "bg-pink",
 ];
 
-export function Badges({ memberList }: BadgesProps) {
+export function Badges({ member }: BadgesProps) {
+  const { members, totalCount } = member;
   const device = useWindowSize();
-  if (memberList.length < 0) return;
+  if (totalCount < 0) return;
   const memberArray =
-    device === "desktop" ? memberList.slice(0, 4) : memberList.slice(0, 2);
+    device === "desktop" ? members.slice(0, 4) : members.slice(0, 2);
   const count = memberArray.length === 2 ? 2 : 4;
   return (
     <div className="relative flex flex-row w-auto h-[38px]">
       {memberArray.map((member, idx) => {
         return (
-          <div
-            key={member.id}
-            className={idx !== 0 ? "ml-[-10px]" : ""}
-          >
+          <div key={member.id} className={idx !== 0 ? "ml-[-10px]" : ""}>
             <Badge
               img={member.profileImageUrl}
               nickname={member.nickname}
@@ -38,7 +36,7 @@ export function Badges({ memberList }: BadgesProps) {
         );
       })}
 
-      {memberList.length > 3 && (
+      {members.length > 3 && (
         <div
           className={`border-[2px] border-white flex justify-center items-center 
           rounded-full !w-[38px] h-[38px] text-pink200 text-md-semibold tablet:text-lg-semibold bg-pink300
@@ -46,7 +44,7 @@ export function Badges({ memberList }: BadgesProps) {
           `}
           style={{ left: `${memberArray.length * 20}px` }}
         >
-          +{memberList.length - count}
+          +{totalCount - count}
         </div>
       )}
     </div>
@@ -67,7 +65,7 @@ export function Badge({ nickname, img, type }: Props) {
   return (
     <div
       className={clsx(
-        "border-2 border-white flex justify-center items-center rounded-full ",
+        "border-2 border-white flex justify-center items-center overflow-hidden rounded-full ",
         {
           comment: "w-[34px] h-[34px]",
           column: "w-[22px] h-[22px] tablet:w-[24px] tablet:h-[24px]",
@@ -81,9 +79,15 @@ export function Badge({ nickname, img, type }: Props) {
       )}
     >
       {img ? (
-        <img src={img} alt="프로필 이미지" />
+        <img
+          className="object-cover w-full h-full "
+          src={img}
+          alt="프로필 이미지"
+        />
       ) : (
-        <div className="text-white text-md-semibold tablet:text-lg-semibold">{firstChar}</div>
+        <div className="text-white text-md-semibold tablet:text-lg-semibold">
+          {firstChar}
+        </div>
       )}
     </div>
   );

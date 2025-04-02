@@ -1,10 +1,11 @@
-import { useAutoClose } from "@/hooks/useAutoClose";
-import X from "@/assets/icons/X.icon.svg";
-import Button from "@/components/common/Button/Button";
+import { Dispatch, ReactNode, SetStateAction, useEffect } from "react";
 import Image from "next/image";
-import { ReactNode, useEffect, useState } from "react";
+import Button from "@/components/common/Button/Button";
 import DropdownEditDel from "./Dropdown/DropdownEditDel";
+import { useAutoClose } from "@/hooks/useAutoClose";
 import { deleteCard } from "@/api/card.api";
+import X from "@/assets/icons/X.icon.svg";
+import CardModal from "../ModalContents/Card.modal";
 
 interface Props {
   children?: React.ReactNode;
@@ -17,7 +18,7 @@ interface Props {
   size?: "xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"; // 크기별 스타일 적용
   variant?: "primary" | "secondary" | "outline" | "disabled" | "create"; // 색상/디자인 적용
   isOpen?: boolean;
-  setIsOpen?: (v: boolean) => void;
+  setIsOpen?: Dispatch<SetStateAction<boolean>>;
 }
 
 export function Modal({
@@ -38,15 +39,16 @@ export function Modal({
     ref,
     setIsOpen: internalSetIsOpen,
   } = useAutoClose(false);
-  const modalIsOpen = isOpen !== undefined ? isOpen : internalIsOpen;
-  const handleSetIsOpen = setIsOpen ?? internalSetIsOpen;
+
+  const modalIsOpen = isOpen ? isOpen : internalIsOpen;
+  const modalSetIsOpen = setIsOpen ? setIsOpen : internalSetIsOpen;
 
   useEffect(() => {
     if (!modalIsOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        handleSetIsOpen(false);
+        modalSetIsOpen(false);
       }
     };
 
@@ -54,21 +56,21 @@ export function Modal({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [modalIsOpen, handleSetIsOpen, ref]);
+  }, []);
 
   return (
     <>
       {modalIsOpen && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-black-400/70 ">
           <div
-            className="px-4 py-6 relative flex flex-col tablet:px-6  w-[327px] tablet:w-[568px] h-auto bg-white rounded-[8px] z-20 "
+            className="px-4 py-6 relative flex flex-col tablet:px-6  w-[327px] tablet:w-[568px] h-auto bg-white rounded-[8px] z-20 overflow-y-auto max-h-[calc(100%-200px)]"
             style={{ gap: rightOnClick ? "24px" : "32px" }}
             ref={ref}
           >
             {leftOnClick && (
               <button
                 className="absolute top-6 right-4 tablet:top-6 tablet:right-6"
-                onClick={() => handleSetIsOpen(false)}
+                onClick={() => modalSetIsOpen(false)}
               >
                 <Image src={X} width={32} height={32} alt="X" />
               </button>
@@ -80,8 +82,8 @@ export function Modal({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      handleSetIsOpen(false);
-                      leftOnClick;
+                      modalSetIsOpen(false);
+                      leftOnClick();
                     }}
                   >
                     {leftHandlerText}
@@ -89,7 +91,9 @@ export function Modal({
                 ) : (
                   <Button
                     variant="outline"
-                    onClick={() => handleSetIsOpen(false)}
+                    onClick={() => {
+                      modalSetIsOpen(false);
+                    }}
                   >
                     취소
                   </Button>
@@ -98,10 +102,12 @@ export function Modal({
               {rightOnClick && (
                 <div className="tablet:w-[256px] h-[54px] w-[144px] z-20">
                   <Button
-                    variant="primary"
+                    variant={variant}
                     onClick={() => {
-                      handleSetIsOpen(false);
-                      rightOnClick();
+                      if (variant !== "disabled") {
+                        rightOnClick();
+                        modalSetIsOpen(false);
+                      }
                     }}
                   >
                     {rightHandlerText}
@@ -117,7 +123,7 @@ export function Modal({
         <Button
           size={size}
           variant={variant}
-          onClick={() => handleSetIsOpen(true)}
+          onClick={() => modalSetIsOpen(true)}
           className={className}
         >
           {ModalOpenButton}
@@ -129,31 +135,38 @@ export function Modal({
 
 interface DetailContentProps {
   cardTitle: string;
-  children: ReactNode;
   ModalOpenButton: ReactNode;
   cardId: number;
+  columnTitle: string;
+  columnId: number;
+  setIsCardEdit: Dispatch<SetStateAction<boolean>>;
+  setCurrentCards: Dispatch<SetStateAction<Card[]>>;
+  isOpen?: boolean;
+  setIsOpen?: (value: boolean) => void;
+  setEditCardId: Dispatch<SetStateAction<number>>;
 }
 export function DetailContent({
   cardTitle,
-  children,
+  columnTitle,
   ModalOpenButton,
   cardId,
+  columnId,
+  setCurrentCards,
+  setIsCardEdit,
+  setEditCardId,
 }: DetailContentProps) {
   const { isOpen, ref, setIsOpen } = useAutoClose(false);
-  const [isEdit, setIsEdit] = useState(false);
+
   const handleButtonClick = () => {
     setIsOpen(true);
   };
 
   const handleCardDelete = async () => {
     await deleteCard(cardId);
+    setCurrentCards((prev) => prev.filter((card) => card.cardId !== cardId));
     setIsOpen(false);
   };
-  const handleEdit = () => {
-    setIsOpen(false);
-    setIsEdit(true);
-    //할일 수정 모달 띄워야함
-  };
+
   return (
     <>
       {isOpen && (
@@ -170,14 +183,22 @@ export function DetailContent({
                 <div className="flex items-center ">
                   <DropdownEditDel
                     onDelete={handleCardDelete}
-                    onEdit={handleEdit}
+                    onEdit={() => {
+                      setIsOpen(false);
+                      setIsCardEdit(true);
+                      setEditCardId(cardId);
+                    }}
                   />
                   <button onClick={() => setIsOpen(false)}>
                     <Image src={X} width={32} height={32} alt="X" />
                   </button>
                 </div>
               </div>
-              {children}
+              <CardModal
+                columnTitle={columnTitle}
+                cardId={cardId}
+                columnId={columnId}
+              />
             </div>
           </div>
         </div>

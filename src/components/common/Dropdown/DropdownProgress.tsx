@@ -16,6 +16,7 @@ const DropdownProgress: React.FC<DropdownProgressProps> = ({
   onChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selected, setSelected] = useState(selectedTitle);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,14 +35,14 @@ const DropdownProgress: React.FC<DropdownProgressProps> = ({
   }, []);
 
   return (
-    <div>
+    <div className="w-full ">
       <div className="font-bold text-lg-regular mb-[10px]">상태</div>
-      <div className="relative w-[180px]" ref={dropdownRef}>
+      <div className="relative w-full " ref={dropdownRef}>
         <button
-          className="flex items-center justify-between w-full h-[48px] px-3 py-2 bg-white border border-gray-300 rounded-lg"
+          className="flex items-center justify-between w-full h-[48px] px-[9px] py-2 bg-white border border-gray-300 rounded-lg"
           onClick={() => setIsOpen((prev) => !prev)}
         >
-          <Status value={selectedTitle} />
+          <Status value={selected} />
           <Image src={DownIcon} alt="" width={26} height={26} />
         </button>
 
@@ -55,12 +56,12 @@ const DropdownProgress: React.FC<DropdownProgressProps> = ({
                 }
                 onClick={() => {
                   setIsOpen(false);
+                  setSelected(title);
                   onChange(title);
                 }}
               >
-                <div className="w-[30px]">
-                  {title === selectedTitle && <Image src={CheckIcon} alt="" />}
-                </div>
+                {title === selectedTitle && <Image src={CheckIcon} alt="" />}
+
                 <Status value={title} />
               </button>
             ))}
